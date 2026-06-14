@@ -2,6 +2,33 @@
 <?php
 
 define('BASE_PATH', dirname(__DIR__));
+
+// Include database configuration
+include(BASE_PATH . '/config/database.php');
+
+// Handle contact form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_submit'])) {
+    $name = trim($_POST['name'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $message = trim($_POST['message'] ?? '');
+
+    if (!empty($name) && !empty($email) && !empty($message)) {
+        // Prepare and execute SQL statement
+        $stmt = $conn->prepare("INSERT INTO contacts (name, email, message) VALUES (?, ?, ?)");
+        $stmt->bind_param("sss", $name, $email, $message);
+
+        if ($stmt->execute()) {
+            $success_message = "Thank you for your message! We'll get back to you soon.";
+        } else {
+            $error_message = "Sorry, there was an error sending your message. Please try again.";
+        }
+
+        $stmt->close();
+    } else {
+        $error_message = "Please fill in all fields.";
+    }
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -184,19 +211,32 @@ define('BASE_PATH', dirname(__DIR__));
             <div class="col-lg-8">
                 <div class="card-dark-wine card p-4">
                     <h4 class="text-white mb-3"><i class="bi bi-send me-2"></i> Ask me about CRUD or PHP</h4>
-                    <form action="#" method="POST">
+
+                    <?php if (isset($success_message)): ?>
+                        <div class="alert alert-success" role="alert">
+                            <?php echo htmlspecialchars($success_message); ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (isset($error_message)): ?>
+                        <div class="alert alert-danger" role="alert">
+                            <?php echo htmlspecialchars($error_message); ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <form action="" method="POST">
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <input type="text" class="form-control form-control-crud" placeholder="Your Name" required>
+                                <input type="text" name="name" class="form-control form-control-crud" placeholder="Your Name" required value="<?php echo htmlspecialchars($_POST['name'] ?? ''); ?>">
                             </div>
                             <div class="col-md-6 mb-3">
-                                <input type="email" class="form-control form-control-crud" placeholder="Email Address" required>
+                                <input type="email" name="email" class="form-control form-control-crud" placeholder="Email Address" required value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
                             </div>
                         </div>
                         <div class="mb-3">
-                            <textarea class="form-control form-control-crud" rows="4" placeholder="I want to learn CRUD operations... or just say hi!" required></textarea>
+                            <textarea name="message" class="form-control form-control-crud" rows="4" placeholder="I want to learn CRUD operations... or just say hi!" required><?php echo htmlspecialchars($_POST['message'] ?? ''); ?></textarea>
                         </div>
-                        <button type="submit" class="btn btn-wine w-100 rounded-pill"><i class="bi bi-chat-right-text"></i> Send Message & Learn CRUD</button>
+                        <button type="submit" name="contact_submit" class="btn btn-wine w-100 rounded-pill"><i class="bi bi-chat-right-text"></i> Send Message & Learn CRUD</button>
                     </form>
                 </div>
             </div>
